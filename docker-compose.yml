@@ -1,0 +1,106 @@
+version: "3.8"
+
+services:
+  api:
+    container_name: evolution_api
+    image: evoapicloud/evolution-api:latest
+    restart: always
+    depends_on:
+      redis:
+        condition: service_started
+      evolution-postgres:
+        condition: service_healthy
+    ports:
+      # Original: "127.0.0.1:8080:8080"
+      - "127.0.0.1:8089:8080"
+    volumes:
+      - evolution_instances:/evolution/instances
+    networks:
+      - evolution-net
+      - dokploy-network
+    env_file:
+      - .env
+    expose:
+      # Original: "8080"
+      - "8080"
+
+  frontend:
+    container_name: evolution_frontend
+    image: evoapicloud/evolution-manager:latest
+    restart: always
+    ports:
+      # Original: "3000:80"
+      - "3006:80"
+    volumes:
+      # Override broken nginx config with fixed version
+      - ./nginx-config/nginx.conf:/etc/nginx/conf.d/nginx.conf:ro
+    networks:
+      - evolution-net
+
+  redis:
+    container_name: evolution_redis
+    image: redis:latest
+    restart: always
+    # Original command: redis-server --port 6379 --appendonly yes
+    command: redis-server --port 6389 --appendonly yes
+    volumes:
+      - evolution_redis:/data
+    networks:
+      evolution-net:
+        aliases:
+          - evolution-redis
+      dokploy-network:
+        aliases:
+          - evolution-redis
+    expose:
+      # Original: "6379"
+      - "6389"
+
+  evolution-postgres:
+    container_name: evolution_postgres
+    image: postgres:15
+    restart: always
+    env_file:
+      - .env
+    command:
+      - postgres
+      - -c
+      - max_connections=1000
+      - -c
+      - listen_addresses=*
+    environment:
+      - POSTGRES_DB=${POSTGRES_DATABASE}
+      - POSTGRES_USER=${POSTGRES_USERNAME}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      # Original: "5432:5432" (if it existed)
+      - "5439:5432"
+    networks:
+      - evolution-net
+      - dokploy-network
+    expose:
+      # Original: "5432"
+      - "5432"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USERNAME} -d ${POSTGRES_DATABASE}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  evolution_instances:
+  evolution_redis:
+  postgres_data:
+
+networks:
+  evolution-net:
+    name: evolution-net
+    driver: bridge
+  dokploy-network:
+    driver: bridge
