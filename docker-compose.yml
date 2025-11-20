@@ -12,7 +12,8 @@ services:
         condition: service_healthy
     ports:
       # Original: "127.0.0.1:8080:8080"
-      - "127.0.0.1:8089:8080"
+      # Changed to 0.0.0.0 to allow network access (e.g., from other devices on LAN)
+      - "0.0.0.0:8089:8080"
     volumes:
       - evolution_instances:/evolution/instances
     networks:
@@ -30,7 +31,8 @@ services:
     restart: always
     ports:
       # Original: "3000:80"
-      - "3006:80"
+      # Changed to 0.0.0.0 to allow network access (e.g., from other devices on LAN)
+      - "0.0.0.0:3006:80"
     volumes:
       # Override broken nginx config with fixed version
       - ./nginx-config/nginx.conf:/etc/nginx/conf.d/nginx.conf:ro

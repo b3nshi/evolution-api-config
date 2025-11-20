@@ -46,10 +46,21 @@ docker-compose ps
 
 ### 5. Access Services
 
-- **API**: http://127.0.0.1:8089
+**Local Access:**
+
+- **API**: http://127.0.0.1:8089 or http://localhost:8089
 - **Frontend Manager**: http://localhost:3006
 - **PostgreSQL**: localhost:5439
 - **Redis**: localhost:6389
+
+**Network Access (from other devices on your LAN):**
+
+- **API**: http://YOUR_RASPBERRY_IP:8089 (e.g., http://192.168.1.58:8089)
+- **Frontend Manager**: http://YOUR_RASPBERRY_IP:3006 (e.g., http://192.168.1.58:3006)
+- **PostgreSQL**: YOUR_RASPBERRY_IP:5439
+- **Redis**: YOUR_RASPBERRY_IP:6389
+
+> **Note**: Ports are configured to bind to `0.0.0.0` to allow network access. For security, consider restricting API access in production environments.
 
 ## ⚙️ Configuration
 
@@ -216,10 +227,17 @@ docker-compose exec evolution-postgres psql -U evolution_user_test -d evolution
 1. **Change Default Passwords**: Update all default passwords in `.env` before production use.
 2. **API Key**: Generate a strong, unique `AUTHENTICATION_API_KEY`.
 3. **Database Credentials**: Use strong passwords for PostgreSQL.
-4. **Network Security**: Consider restricting API port (8089) to localhost only in production.
+4. **Network Security**:
+   - Ports are bound to `0.0.0.0` to allow network access (useful for Raspberry Pi deployments)
+   - For production, consider using a reverse proxy (nginx/traefik) with SSL/TLS
+   - If you need to restrict to localhost only, change `0.0.0.0:8089` to `127.0.0.1:8089` in `docker-compose.yml`
+   - Use firewall rules to restrict access to trusted IPs only
 5. **Environment File**: Never commit `.env` to version control (already in `.gitignore`).
+6. **Raspberry Pi Deployment**: Ensure your Raspberry Pi firewall allows incoming connections on ports 8089 and 3006.
 
 ## 🐛 Troubleshooting
+
+For detailed troubleshooting information, including firewall configuration for Raspberry Pi deployments, see [docs/Troubleshooting.md](docs/Troubleshooting.md).
 
 ### Services Won't Start
 
@@ -287,6 +305,8 @@ evolution-api/
 ├── env.sample                  # Environment variables template
 ├── nginx-config/
 │   └── nginx.conf             # Custom nginx configuration for frontend
+├── docs/
+│   └── Troubleshooting.md     # Detailed troubleshooting guide
 ├── README.md                   # This file
 └── .gitignore                 # Git ignore rules
 ```
